@@ -58,6 +58,10 @@
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN PV */
 
+uint8_t rts=0xFF; //right turn signal byte
+uint8_t lts; //left turn signal byte
+uint8_t horn=0xFF; //horn
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -72,14 +76,12 @@
 
 /* External variables --------------------------------------------------------*/
 extern CAN_HandleTypeDef hcan1;
+/* USER CODE BEGIN EV */
+
 extern CAN_TxHeaderTypeDef pHeader;
 extern CAN_RxHeaderTypeDef pRxHeader;
 extern uint32_t TxMailbox;
 extern uint8_t r;
-extern uint8_t rts; //right turn signal byte
-extern uint8_t lts; //left turn signal byte
-extern uint8_t horn; //horn
-/* USER CODE BEGIN EV */
 
 /* USER CODE END EV */
 
@@ -234,22 +236,22 @@ void CAN1_RX0_IRQHandler(void)
   switch(r){
     case 0x00:
       rts=0xFF;
-      break;
+		  break;
     case 0x01:
       rts=0x00;
-      break;
+		  break;
     case 0x02:
       lts=0xFF;
-      break;
+		  break;
     case 0x03:
       lts=0x00;
-      break;
+		  break;
     case 0x04:
       horn=0xFF;
-      break;
+		  break;
     case 0x05:
       horn=0x00;
-      break;
+		  break;
   }   
 }
   /* USER CODE END CAN1_RX0_IRQn 1 */

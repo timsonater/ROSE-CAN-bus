@@ -53,7 +53,9 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+void msDelay(uint32_t msTime){
+	for(uint32_t i=0; i<msTime*4000;i++);
+}
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -72,10 +74,19 @@ uint32_t TxMailbox;
 uint8_t r; //declare a receive byte
 CAN_FilterTypeDef sFilterConfig; //declare CAN filter structure
 
+int count; //count to keep track of time
+int lts_count; //count to keep track of left turn signal time
+int rts_count; //count to keep track of right turn signal time
 
-uint8_t rts; //right turn signal byte
-uint8_t lts; //left turn signal byte
-uint8_t horn; //horn
+int regi;
+//these keep track of which state the turn signals are changing too
+//"high to low"(0), or "low to high"(1)
+int lts_state;
+int rts_state;
+
+extern uint8_t rts; //right turn signal byte
+extern uint8_t lts; //left turn signal byte
+extern uint8_t horn; //horn
 
 
 /* USER CODE END PV */
@@ -137,32 +148,118 @@ int main(void)
 	sFilterConfig.FilterScale=CAN_FILTERSCALE_32BIT; //set filter scale
 	sFilterConfig.FilterActivation=ENABLE;
 	
-	HAL_CAN_ConfigFilter(&hcan1, &sFilterConfig); //configure CAN filter
-
-	
+	HAL_CAN_ConfigFilter(&hcan1, &sFilterConfig); //configure CAN filter	
 	HAL_CAN_Start(&hcan1); //start CAN
 	HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING); //enable interrupts
-
+	
   /* USER CODE END 2 */
-
+	
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+		
+		
+		//---------------LEFT TURN SIGNAL---------------//
+		//if lts is high, blink lts
+  	if(lts==0xFF || (lts==0xF0 && count==lts_count)){
+
+			//if first set lts to "not first"
+			if(lts==0xFF){
+				lts=0xF0;
+				//set the count the lts will blink on
+				lts_count=count;
+				//set the state
+				lts_state=1;
+			}
+			
+			
+			
+			//put lts high if its set to
+			if(lts_state==1){
+				GPIOC->ODR|=(0x0001);
+				lts_state=0;
+			//put lts low if its set to
+			}else{			
+				GPIOC->ODR=(GPIOC->ODR-0x0001);
+				lts_state=1;
+			}
+  	}
+		
+		
+		//if lts off signal is recieved, turn off lts
+		if(lts==0x0F){
+			GPIOC->ODR=(GPIOC->ODR-0x0001);
+			lts=0x00; //set lts to idle
+		}
+	 
+		
+		//---------------RIGHT TURN SIGNAL---------------//
+		
+		//if rts is high, blink rts
+  	if(rts==0xFF || (rts==0xF0 && count==rts_count)){
+			
+			//if first set rts to "not first"
+			if(rts==0xFF){
+				rts=0xF0;
+				//set the count the rts will blink on
+				rts_count=count;
+				//set the state
+				rts_state=1;
+			}
+			
+			//put rts high if its set to
+			if(rts_state==1){
+				GPIOC->ODR|=0x0002;
+				rts_state=0;
+			//put rts low if its set to
+			}else{
+				GPIOC->ODR=(GPIOC->ODR-0x0002);
+				rts_state=1;
+			}
+  	}
+		
+		//if rts off signal is recieved, turn off rts
+		//TODO: make sure you don't subtract is you don't need to.
+		if(rts==0x0F){
+			GPIOC->ODR=(GPIOC->ODR-0x0002);
+			rts=0x00; //set rts to idle
+		}
+		
+		
+		
+		//--------------------HORN----------------------//
+		
+		
+		//if horn is high, start honking horn
+		if(horn==0xFF){
+			GPIOC->ODR|=0x0004;
+		}	
+		//if horn is low, stop honking horn
+		if(horn==0x00){
+			GPIOC->ODR=(GPIOC->ODR-0x0004);
+			HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_12);
+		}
+		
+		
+		/*
+	  GPIOD->ODR=0xF000; //flash on board LEDs
+		msDelay(200);
+		GPIOD->ODR=0x0000; //flash on board LEDs
+		msDelay(200);
+		*/
+		
+		msDelay(50);
+		count++;
+		
+		//reset count at 500ms
+		if(count==10){
+			//HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_12|GPIO_PIN_13|GPIO_PIN_14|GPIO_PIN_15);
+			count=0;
+		}
+		
     /* USER CODE END WHILE */
-  	//if rts is high, blink rts
-  	if(rts==0xFF){
-  		HAL_GPIO_WritePin(GPIOC, GPIO_PIN_0, GPIO_PIN_SET);
-  		HAL_Delay(1000);
-  		HAL_GPIO_WritePin(GPIOC, GPIO_PIN_0, GPIO_PIN_RESET);
-  		HAL_Delay(1000); 		  		
-  	}
-  	if(lts==0xFF){
-  		HAL_GPIO_WritePin(GPIOC, GPIO_PIN_1, GPIO_PIN_SET);
-  		HAL_Delay(1000);
-  		HAL_GPIO_WritePin(GPIOC, GPIO_PIN_1, GPIO_PIN_RESET);
-  		HAL_Delay(1000);   		
-  	}
+
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
@@ -255,10 +352,14 @@ static void MX_GPIO_Init(void)
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOH_CLK_ENABLE();
   __HAL_RCC_GPIOC_CLK_ENABLE();
+  __HAL_RCC_GPIOD_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_12|GPIO_PIN_13|GPIO_PIN_14|GPIO_PIN_15, GPIO_PIN_RESET);
 
   /*Configure GPIO pins : PC0 PC1 PC2 */
   GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2;
@@ -266,6 +367,13 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : PD12 PD13 PD14 PD15 */
+  GPIO_InitStruct.Pin = GPIO_PIN_12|GPIO_PIN_13|GPIO_PIN_14|GPIO_PIN_15;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 
 }
 
