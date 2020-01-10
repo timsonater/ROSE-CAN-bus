@@ -1,4 +1,4 @@
---cpu=Cortex-M4.fp
+--cpu=Cortex-M4.fp.sp
 "stm1-dash\startup_stm32f407xx.o"
 "stm1-dash\main.o"
 "stm1-dash\stm32f4xx_it.o"
