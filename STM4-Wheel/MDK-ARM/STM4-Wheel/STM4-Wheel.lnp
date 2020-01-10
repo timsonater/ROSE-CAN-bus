@@ -1,0 +1,27 @@
+--cpu=Cortex-M4.fp
+"stm4-wheel\startup_stm32f407xx.o"
+"stm4-wheel\main.o"
+"stm4-wheel\stm32f4xx_it.o"
+"stm4-wheel\stm32f4xx_hal_msp.o"
+"stm4-wheel\stm32f4xx_hal_adc.o"
+"stm4-wheel\stm32f4xx_hal_adc_ex.o"
+"stm4-wheel\stm32f4xx_hal_can.o"
+"stm4-wheel\stm32f4xx_hal_tim.o"
+"stm4-wheel\stm32f4xx_hal_tim_ex.o"
+"stm4-wheel\stm32f4xx_hal_rcc.o"
+"stm4-wheel\stm32f4xx_hal_rcc_ex.o"
+"stm4-wheel\stm32f4xx_hal_flash.o"
+"stm4-wheel\stm32f4xx_hal_flash_ex.o"
+"stm4-wheel\stm32f4xx_hal_flash_ramfunc.o"
+"stm4-wheel\stm32f4xx_hal_gpio.o"
+"stm4-wheel\stm32f4xx_hal_dma_ex.o"
+"stm4-wheel\stm32f4xx_hal_dma.o"
+"stm4-wheel\stm32f4xx_hal_pwr.o"
+"stm4-wheel\stm32f4xx_hal_pwr_ex.o"
+"stm4-wheel\stm32f4xx_hal_cortex.o"
+"stm4-wheel\stm32f4xx_hal.o"
+"stm4-wheel\system_stm32f4xx.o"
+--library_type=microlib --strict --scatter "STM4-Wheel\STM4-Wheel.sct"
+--summary_stderr --info summarysizes --map --load_addr_map_info --xref --callgraph --symbols
+--info sizes --info totals --info unused --info veneers
+--list "STM4-Wheel.map" -o STM4-Wheel\STM4-Wheel.axf
