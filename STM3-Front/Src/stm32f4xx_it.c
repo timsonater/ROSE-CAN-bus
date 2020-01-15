@@ -48,7 +48,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
- 
+ void msDelay2(uint32_t msTime);
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -85,6 +85,8 @@ extern volatile bool lts_light_state;
 extern volatile bool rts_light_state;
 extern volatile bool haz_light_state;
 
+//fault indicator
+extern volatile bool fault_flag;
 
 /* USER CODE END PV */
 
@@ -365,7 +367,41 @@ void TIM4_IRQHandler(void)
   /* USER CODE END TIM4_IRQn 1 */
 }
 
-/* USER CODE BEGIN 1 */
+/**
+  * @brief This function handles EXTI line[15:10] interrupts.
+  */
+void EXTI15_10_IRQHandler(void)
+{
+  /* USER CODE BEGIN EXTI15_10_IRQn 0 */
+	bool battery_ok_input;
+	//msDelay2(500);
+  /* USER CODE END EXTI15_10_IRQn 0 */
+  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_10);
+  /* USER CODE BEGIN EXTI15_10_IRQn 1 */
+	
+	
+	
+	//step 1: check BMS signal to ensure battery is safe (PE10)
+	//(should be grounded, may not be usable)
+	//battery_ok_input = ((GPIOE->IDR >> 10) & 0x0001);  
+	//if(!battery_ok_input){
+	//	return;				
+	//}			
+	GPIOD->ODR=0xFFFF;
+	//cut off positive contactor PC11 and PC9
+	GPIOC->BSRR = 0x0A000000;
+	//cut precharge board off (if its on) PC10
+	GPIOC->BSRR = 0x04000000;
+	
+	fault_flag=1;
+	state=4;
+  /* USER CODE END EXTI15_10_IRQn 1 */
+}
 
+/* USER CODE BEGIN 1 */
+//function uses clock cycles to create a delay
+void msDelay2(uint32_t msTime){
+	for(uint32_t i=0; i<msTime*4000;i++);
+}
 /* USER CODE END 1 */
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
