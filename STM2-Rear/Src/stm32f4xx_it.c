@@ -266,11 +266,8 @@ void SysTick_Handler(void)
 void CAN1_RX0_IRQHandler(void)
 {
   /* USER CODE BEGIN CAN1_RX0_IRQn 0 */
-	count++;
-	if(count==100){
-		//GPIOD->ODR = ~(GPIOD->ODR);
-		count=0;
-	}
+	
+	
 	
   /* USER CODE END CAN1_RX0_IRQn 0 */
   HAL_CAN_IRQHandler(&hcan1);
@@ -383,6 +380,7 @@ void CAN1_RX0_IRQHandler(void)
 		//NOTE: this interrupt effectively acts as the timer for the DAC on the rear stm 
 		case 0x210:
 			
+			GPIOD->ODR ^= 0x0020;
 			HAL_DAC_SetValue(&hdac, DAC1_CHANNEL_1, DAC_ALIGN_8B_R, message_in);
 			
 			//if the message voltage is greater than the cruise voltage just use that no matter what

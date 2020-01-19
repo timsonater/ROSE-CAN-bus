@@ -257,17 +257,18 @@ int main(void)
 				GPIOC->BSRR = 0x04000000;
 				//set PRB to Main pack by setting PE6 high
 				GPIOE->BSRR = 0x00000040;
-				
 				msDelay(1000);
+				//cut auxillary power by seting PD9 low
+				GPIOD->BSRR = 0x02000000;
 				
 				//EMERGENCY POWER SWITCH TEST
 				//hold 24V-12V DC DC high: PD9
-				GPIOD->BSRR=0x00000200;
-				msDelay(200);
+				//GPIOD->BSRR=0x00000200;
+				//msDelay(200);
 				//cut off positive contactor PC11 and PC9
-				GPIOC->BSRR = 0x0A000000;
+				//GPIOC->BSRR = 0x0A000000;
 				//set PRB to Auxillary power by setting PE6 low
-				GPIOE->BSRR = 0x00400000;
+				//GPIOE->BSRR = 0x00400000;
 				
 				
 				//main power is now on enter normal operation states

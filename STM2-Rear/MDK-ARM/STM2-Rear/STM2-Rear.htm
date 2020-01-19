@@ -3,7 +3,7 @@
 <title>Static Call Graph - [STM2-Rear\STM2-Rear.axf]</title></head>
 <body><HR>
 <H1>Static Call Graph for image STM2-Rear\STM2-Rear.axf</H1><HR>
-<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 5060750: Last Updated: Tue Jan 07 16:02:42 2020
+<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 5060750: Last Updated: Wed Jan 15 18:53:39 2020
 <BR><P>
 <H3>Maximum Stack Usage =        176 bytes + Unknown(Cycles, Untraceable Function Pointers)</H3><H3>
 Call chain for Maximum Stack Depth:</H3>
@@ -444,7 +444,7 @@ Global Symbols
 </UL>
 <BR>[Address Reference Count : 1]<UL><LI> startup_stm32f407xx.o(RESET)
 </UL>
-<P><STRONG><a name="[1e]"></a>CAN1_RX0_IRQHandler</STRONG> (Thumb, 164 bytes, Stack size 8 bytes, stm32f4xx_it.o(i.CAN1_RX0_IRQHandler))
+<P><STRONG><a name="[1e]"></a>CAN1_RX0_IRQHandler</STRONG> (Thumb, 158 bytes, Stack size 8 bytes, stm32f4xx_it.o(i.CAN1_RX0_IRQHandler))
 <BR><BR>[Stack]<UL><LI>Max Depth = 48<LI>Call Chain = CAN1_RX0_IRQHandler &rArr; HAL_CAN_IRQHandler
 </UL>
 <BR>[Calls]<UL><LI><a href="#[67]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_CAN_IRQHandler
@@ -523,8 +523,8 @@ Global Symbols
 <P><STRONG><a name="[7d]"></a>HAL_CAN_Init</STRONG> (Thumb, 282 bytes, Stack size 16 bytes, stm32f4xx_hal_can.o(i.HAL_CAN_Init))
 <BR><BR>[Stack]<UL><LI>Max Depth = 88<LI>Call Chain = HAL_CAN_Init &rArr; HAL_CAN_MspInit &rArr; HAL_GPIO_Init
 </UL>
-<BR>[Calls]<UL><LI><a href="#[7f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_GetTick
-<LI><a href="#[7e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_CAN_MspInit
+<BR>[Calls]<UL><LI><a href="#[7e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_CAN_MspInit
+<LI><a href="#[7f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_GetTick
 </UL>
 <BR>[Called By]<UL><LI><a href="#[a2]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;MX_CAN1_Init
 </UL>
@@ -666,8 +666,8 @@ Global Symbols
 <BR><BR>[Stack]<UL><LI>Max Depth = 40<LI>Call Chain = HAL_Init &rArr; HAL_InitTick &rArr; HAL_NVIC_SetPriority
 </UL>
 <BR>[Calls]<UL><LI><a href="#[8a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_MspInit
-<LI><a href="#[89]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_InitTick
 <LI><a href="#[88]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_NVIC_SetPriorityGrouping
+<LI><a href="#[89]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_InitTick
 </UL>
 <BR>[Called By]<UL><LI><a href="#[5b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;main
 </UL>

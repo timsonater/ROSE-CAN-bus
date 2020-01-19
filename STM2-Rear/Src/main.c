@@ -259,8 +259,8 @@ int main(void)
 	//start blinker control timers
 	HAL_TIM_Base_Start_IT(&htim4);
 	
-	//GPIOD->ODR = 0xFFFFFFFF;
-	
+
+//turn on motor on: DELETE THIS
 	GPIOD->BSRR = 0x00000100;
 	
   /* USER CODE END 2 */
