@@ -59,6 +59,9 @@
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN PV */
 
+//---Throttle Watchdog---//
+bool throttleFault;
+
 //-----CAN VARIABLES-----//
 extern uint32_t TxMailbox;
 extern uint8_t message_in;
@@ -117,7 +120,6 @@ uint8_t cruise_voltage_holder; //holder to prevent underflows
 
 /* External variables --------------------------------------------------------*/
 extern CAN_HandleTypeDef hcan1;
-extern TIM_HandleTypeDef htim3;
 extern TIM_HandleTypeDef htim4;
 extern TIM_HandleTypeDef htim5;
 /* USER CODE BEGIN EV */
@@ -403,6 +405,7 @@ void CAN1_RX0_IRQHandler(void)
 		
 			//pet the watchdog timer (timer 3)
 			//TIM3->CNT=0;
+			throttleFault = 0;
 		  break;
 		
 		//Filter4: Regen Position
@@ -422,19 +425,6 @@ void CAN1_RX0_IRQHandler(void)
 	}    
 
   /* USER CODE END CAN1_RX0_IRQn 1 */
-}
-/**
-  * @brief This function handles TIM3 global interrupt.
-  */
-void TIM3_IRQHandler(void)
-{
-  /* USER CODE BEGIN TIM3_IRQn 0 */
-
-  /* USER CODE END TIM3_IRQn 0 */
-  HAL_TIM_IRQHandler(&htim3);
-  /* USER CODE BEGIN TIM3_IRQn 1 */
-
-  /* USER CODE END TIM3_IRQn 1 */
 }
 
 /**
