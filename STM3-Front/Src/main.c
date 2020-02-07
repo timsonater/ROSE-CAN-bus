@@ -212,6 +212,8 @@ int main(void)
 
 	//start blinker control timers
 	HAL_TIM_Base_Start_IT(&htim4);
+	//start battery fault timer
+	HAL_TIM_Base_Start_IT(&htim3);
 	
   /* USER CODE END 2 */
  

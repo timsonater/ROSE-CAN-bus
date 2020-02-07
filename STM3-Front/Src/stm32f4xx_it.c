@@ -337,18 +337,20 @@ void TIM3_IRQHandler(void)
 	
 	//Holds whether the PE10 is high or not.
 	uint8_t gpioBit = 0;
-	gpioBit = GPIOE->IDR;
-	gpioBit = (gpioBit >> 10) && 0x1;
+	gpioBit = (GPIOE->IDR >> 10) & 0x1;
 	
 	//Shifts in a 1 if bit is high, shift 0 otherwise
 	interruptHolder = interruptHolder << 1;
-	interruptHolder = interruptHolder || gpioBit;
+	interruptHolder |= gpioBit;
+	
 	
 	//Checks if PE10 has been high for a 320 ms.
 	//Inside if statement is the code for triggering the fault.
-	if (interruptHolder == 0xFFFFFFFF){
+	if(interruptHolder == 0xFFFFFFFF){
 		
 		bool battery_ok_input;
+		GPIOD->ODR=0xFFFF;
+		
 		HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_10);
 
 		GPIOD->ODR=0xFFFF;
