@@ -120,6 +120,7 @@ uint8_t cruise_voltage_holder; //holder to prevent underflows
 
 /* External variables --------------------------------------------------------*/
 extern CAN_HandleTypeDef hcan1;
+extern TIM_HandleTypeDef htim3;
 extern TIM_HandleTypeDef htim4;
 extern TIM_HandleTypeDef htim5;
 /* USER CODE BEGIN EV */
@@ -425,6 +426,26 @@ void CAN1_RX0_IRQHandler(void)
 	}    
 
   /* USER CODE END CAN1_RX0_IRQn 1 */
+}
+
+/**
+  * @brief This function handles TIM3 global interrupt.
+  */
+void TIM3_IRQHandler(void)
+{
+  /* USER CODE BEGIN TIM3_IRQn 0 */
+
+  /* USER CODE END TIM3_IRQn 0 */
+  HAL_TIM_IRQHandler(&htim3);
+  /* USER CODE BEGIN TIM3_IRQn 1 */
+	//Checking throttle position roughly every third of a second
+if(throttleFault == 1) 
+	{
+	HAL_DAC_Stop(&hdac, DAC1_CHANNEL_1);
+	HAL_DAC_Stop(&hdac, DAC1_CHANNEL_2);
+	}
+throttleFault = 1;
+  /* USER CODE END TIM3_IRQn 1 */
 }
 
 /**

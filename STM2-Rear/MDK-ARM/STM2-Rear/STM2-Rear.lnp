@@ -17,6 +17,7 @@
 "stm2-rear\stm32f4xx_hal_pwr_ex.o"
 "stm2-rear\stm32f4xx_hal_cortex.o"
 "stm2-rear\stm32f4xx_hal.o"
+"stm2-rear\stm32f4xx_hal_exti.o"
 "stm2-rear\stm32f4xx_hal_dac.o"
 "stm2-rear\stm32f4xx_hal_dac_ex.o"
 "stm2-rear\stm32f4xx_hal_tim.o"
