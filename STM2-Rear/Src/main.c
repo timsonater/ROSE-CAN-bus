@@ -179,6 +179,7 @@ int main(void)
 	User_GPIO_Init();
 	//Added delay to allow motor controller to start up
 	msDelay(5000);
+	
 	//start DACs
 	HAL_DAC_Start(&hdac, DAC1_CHANNEL_1);
 	HAL_DAC_Start(&hdac, DAC1_CHANNEL_2);

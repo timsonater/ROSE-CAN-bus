@@ -422,6 +422,7 @@ void CAN1_RX0_IRQHandler(void)
 			HAL_DAC_Stop(&hdac, DAC1_CHANNEL_2);
 			//trip fault flag
 			fault_flag=1;
+
 			break;
 	}    
 
@@ -439,12 +440,12 @@ void TIM3_IRQHandler(void)
   HAL_TIM_IRQHandler(&htim3);
   /* USER CODE BEGIN TIM3_IRQn 1 */
 	//Checking throttle position roughly every third of a second
-if(throttleFault == 1) 
-	{
-	HAL_DAC_Stop(&hdac, DAC1_CHANNEL_1);
-	HAL_DAC_Stop(&hdac, DAC1_CHANNEL_2);
-	}
-throttleFault = 1;
+	if(throttleFault == 1) 
+		{
+		HAL_DAC_Stop(&hdac, DAC1_CHANNEL_1);
+		HAL_DAC_Stop(&hdac, DAC1_CHANNEL_2);
+		}
+	throttleFault = 1;
   /* USER CODE END TIM3_IRQn 1 */
 }
 
