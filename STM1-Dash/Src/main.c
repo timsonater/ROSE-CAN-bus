@@ -410,10 +410,12 @@ int main(void)
 			  //if low to high
 			  if(break_lights==!break_lights_holder && break_lights_holder==0){
 				  CAN_Send(0x12, 0x200); //send "brake lights on" to turn on break lights
+					GPIOD->ODR = 0xFFFF;
 					break_lights_holder=break_lights;
 					//if high to low
 				  }else if(break_lights==!break_lights_holder && break_lights_holder==1){
 					CAN_Send(0x13, 0x200);  //sending "brake lights off" to disable CC
+						GPIOD->ODR = 0x0000;
 					break_lights_holder=break_lights;					
 					}					
 					
@@ -639,8 +641,8 @@ static void User_GPIO_Init(void){
 	
 	//enable PD12-PD15 debugging lights
   GPIOD->MODER=0x55FFFFFF;
-	//enable PE0-PE9 as inputs
-	GPIOE->MODER=0xFFFC0000;
+	//enable PE0-PE10 as inputs
+	GPIOE->MODER=0xFFC00000;
 
   //ensure all pulldown resistors are activated (CHECK PE9 works)
   GPIOE->PUPDR=0xAAAA5AAA; 

@@ -241,11 +241,11 @@ void ADC_IRQHandler(void)
   //store the throttle voltage
 	throttle_voltage=HAL_ADC_GetValue(&hadc1);
 	
-	if(throttle_voltage >= 0x50){
-			GPIOD->ODR = 0xFFFFFFFF;
-	}else{
-		GPIOD->ODR = 0;
-	}
+	//if(throttle_voltage >= 0x50){
+	//		GPIOD->ODR = 0xFFFFFFFF;
+	//}else{
+	//	GPIOD->ODR = 0;
+	//}
 	CAN_Send(throttle_voltage, 0x210);
 	
 	

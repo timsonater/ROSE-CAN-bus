@@ -330,18 +330,20 @@ void CAN1_RX0_IRQHandler(void)
 					//CC_dec_set=1;
 					break;
 						
-				//break lights on
+				//break lights on 
 				case 0x12:
-					//turn on break lights (PC10)
-				  //GPIOC->BSRR=0x00000400;
+					//turn on break lights (PB8)
+				  GPIOB->BSRR=0x00000100;
+					GPIOD->ODR |= (0x0020);
 					//turn off CC
 				  //CC_on_off=0;
 					break;
 				
 				//break lights off (and CC disable)
 				case 0x13:
-					//turn off break lights (PC10)
-					//GPIOC->BSRR=0x04000000;
+					//turn off break lights (PB8)
+					GPIOB->BSRR=0x01000000;
+					GPIOD->ODR &= ~(0x0020);
 					break;
 				
 				//TODO: I have no idea if low or high for forward/reverse and power/eco
@@ -380,7 +382,7 @@ void CAN1_RX0_IRQHandler(void)
 		//NOTE: this interrupt effectively acts as the timer for the DAC on the rear stm 
 		case 0x210:
 			
-			GPIOD->ODR ^= 0x0020;
+			//GPIOD->ODR ^= 0x0020;
 			HAL_DAC_SetValue(&hdac, DAC1_CHANNEL_1, DAC_ALIGN_8B_R, message_in);
 			
 			//if the message voltage is greater than the cruise voltage just use that no matter what

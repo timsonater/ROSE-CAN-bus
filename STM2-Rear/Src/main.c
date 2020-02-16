@@ -716,6 +716,7 @@ static void User_GPIO_Init(void){
   //enable clocks
 	__HAL_RCC_GPIOD_CLK_ENABLE();
 	__HAL_RCC_GPIOE_CLK_ENABLE();
+	__HAL_RCC_GPIOB_CLK_ENABLE();
   __HAL_RCC_GPIOC_CLK_ENABLE();
 	
 	//enable PD12-PD15 debugging lights
@@ -724,8 +725,12 @@ static void User_GPIO_Init(void){
 	GPIOC->MODER=0xFD5577FF;
 	//enable PE0 as an input
 	GPIOE->MODER=0xFFFFFFFC;
+	//enable PB8 as an output
+	GPIOB->MODER=0xFFFDFFFF;
 	//ensure all pulldown resistors are activated
   GPIOE->PUPDR=0xAAAAAAAA; 
+	
+	
   }
 
 	
