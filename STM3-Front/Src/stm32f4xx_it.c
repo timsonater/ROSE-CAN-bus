@@ -87,7 +87,8 @@ extern volatile bool haz_light_state;
 
 //fault indicators
 extern volatile bool fault_flag;
-uint32_t interruptHolder = 0;
+uint32_t bmsFaultHolder = 0;
+uint32_t carOffHolder = 0xFFFFFFFF;
 
 /* USER CODE END PV */
 
@@ -335,25 +336,21 @@ void TIM3_IRQHandler(void)
   /* USER CODE BEGIN TIM3_IRQn 1 */
 	
 	
-	//Holds whether the PE10 is high or not.
-	uint8_t gpioBit = 0;
-	gpioBit = (GPIOE->IDR >> 10) & 0x1;
 	
 	//Shifts in a 1 if bit is high, shift 0 otherwise
-	interruptHolder = interruptHolder << 1;
-	interruptHolder |= gpioBit;
+	bmsFaultHolder = bmsFaultHolder << 1;
+	bmsFaultHolder |= (GPIOE->IDR >> 10) & 0x1; //PE10
+	
+	carOffHolder = carOffHolder << 1;
+	carOffHolder |= (GPIOA->IDR) & 0x1; //PA0
 	
 	
-	//Checks if PE10 has been high for a 320 ms.
+	//Checks if PE10 (BMS ok) has been high for a 320 ms.
 	//Inside if statement is the code for triggering the fault.
-	if(interruptHolder == 0xFFFFFFFF){
-		
-		bool battery_ok_input;
-		GPIOD->ODR=0xFFFF;
+	if(bmsFaultHolder == 0xFFFFFFFF){
 		
 		HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_10);
 
-		GPIOD->ODR=0xFFFF;
 		//cut off positive contactor PC11 and PC9
 		GPIOC->BSRR = 0x0A000000;
 		//cut precharge board off (if its on) PC10
@@ -363,6 +360,14 @@ void TIM3_IRQHandler(void)
 		state=4;	
 			
 	}	
+	
+	if(carOffHolder == 0){
+		//set 24V-12V DC DC low: PD9
+		GPIOD->BSRR=0x02000000;				
+		//set 110V-12V DC DC low: PE6
+		GPIOE->BSRR = 0x00400000;
+		//car is now off
+	}
   /* USER CODE END TIM3_IRQn 1 */
 }
 

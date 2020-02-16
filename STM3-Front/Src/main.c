@@ -587,6 +587,7 @@ static void User_GPIO_Init(void){
 	__HAL_RCC_GPIOD_CLK_ENABLE();
 	__HAL_RCC_GPIOC_CLK_ENABLE();
 	__HAL_RCC_GPIOE_CLK_ENABLE();
+	__HAL_RCC_GPIOA_CLK_ENABLE();
 	
 	//enable PD12-PD15 debugging lights as outputs and PD9 as output
   GPIOD->MODER=0x55F7FFFF;
@@ -594,10 +595,14 @@ static void User_GPIO_Init(void){
 	GPIOC->MODER=0xFF55F7FC;
 	//enable PE0, PE10 as input, PE6, PE14 as output
 	GPIOE->MODER=0xDFCFDFFC;	
+	//enable PA0 as input
+	GPIOA->MODER=0xA8000000; //reset state
 	
 	
 	//enable pullup on PE10, switching from pulldown to force rising edge interrupt
 	GPIOE->PUPDR=0x55555555;
+	//enable pullup on PA0
+	GPIOA->PUPDR=0x64000001;
   }
 //TODO: if this reads two different things it returns 0, that could be bad
 //simple debounced read (using HAL)
