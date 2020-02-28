@@ -8,7 +8,7 @@
   * that are not between comment pairs USER CODE BEGIN and
   * USER CODE END. Other portions of this file, whether 
   * inserted by the user or by software development tools
-  * are owned by their respective butt copyright owners.
+  * are owned by their respective copyright owners.
   *
   * COPYRIGHT(c) 2019 STMicroelectronics
   *
@@ -290,7 +290,7 @@ int main(void)
 				}
 				break;
 			*/
-				//matt was here
+				
 			//begin throttle position broadcast	
 			case 4:
 				//start ADC and timer it relies on
@@ -309,7 +309,7 @@ int main(void)
 			  motor_on_debounce=HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_4);
 			  haz_debounce=HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_6);
 			  power_eco_debounce=HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_7);
-				break_lights_debounce=HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_8);
+				break_lights_debounce=HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_10);   //PE10!!!
 				power_off_debounce=HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_9);
 			  msDelay(100);
 			  state++;
@@ -331,7 +331,7 @@ int main(void)
 				if(power_eco_debounce==HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_7)){
 				  power_eco=power_eco_debounce;
 				  }
-				if(break_lights_debounce==HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_8)){
+				if(break_lights_debounce==HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_10)){
 				  break_lights=break_lights_debounce;
 				  }
 				if(break_lights_debounce==HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_8)){
@@ -409,11 +409,13 @@ int main(void)
 
 			  //if low to high
 			  if(break_lights==!break_lights_holder && break_lights_holder==0){
-				  CAN_Send(0x12, 0x200);
+				  CAN_Send(0x12, 0x200); //send "brake lights on" to turn on break lights
+					GPIOD->ODR = 0xFFFF;
 					break_lights_holder=break_lights;
 					//if high to low
 				  }else if(break_lights==!break_lights_holder && break_lights_holder==1){
 					CAN_Send(0x13, 0x200);  //sending "brake lights off" to disable CC
+						GPIOD->ODR = 0x0000;
 					break_lights_holder=break_lights;					
 					}					
 					
@@ -639,8 +641,8 @@ static void User_GPIO_Init(void){
 	
 	//enable PD12-PD15 debugging lights
   GPIOD->MODER=0x55FFFFFF;
-	//enable PE0-PE9 as inputs
-	GPIOE->MODER=0xFFF90000;
+	//enable PE0-PE10 as inputs
+	GPIOE->MODER=0xFFC00000;
 
   //ensure all pulldown resistors are activated (CHECK PE9 works)
   GPIOE->PUPDR=0xAAAA5AAA; 

@@ -3,9 +3,8 @@
 "stm3-front\main.o"
 "stm3-front\stm32f4xx_it.o"
 "stm3-front\stm32f4xx_hal_msp.o"
+"stm3-front\system_stm32f4xx.o"
 "stm3-front\stm32f4xx_hal_can.o"
-"stm3-front\stm32f4xx_hal_tim.o"
-"stm3-front\stm32f4xx_hal_tim_ex.o"
 "stm3-front\stm32f4xx_hal_rcc.o"
 "stm3-front\stm32f4xx_hal_rcc_ex.o"
 "stm3-front\stm32f4xx_hal_flash.o"
@@ -18,7 +17,9 @@
 "stm3-front\stm32f4xx_hal_pwr_ex.o"
 "stm3-front\stm32f4xx_hal_cortex.o"
 "stm3-front\stm32f4xx_hal.o"
-"stm3-front\system_stm32f4xx.o"
+"stm3-front\stm32f4xx_hal_exti.o"
+"stm3-front\stm32f4xx_hal_tim.o"
+"stm3-front\stm32f4xx_hal_tim_ex.o"
 --library_type=microlib --strict --scatter "STM3-Front\STM3-Front.sct"
 --summary_stderr --info summarysizes --map --load_addr_map_info --xref --callgraph --symbols
 --info sizes --info totals --info unused --info veneers

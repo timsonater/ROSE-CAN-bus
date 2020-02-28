@@ -48,7 +48,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
- 
+ void msDelay2(uint32_t msTime);
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -85,6 +85,10 @@ extern volatile bool lts_light_state;
 extern volatile bool rts_light_state;
 extern volatile bool haz_light_state;
 
+//fault indicators
+extern volatile bool fault_flag;
+uint32_t bmsFaultHolder = 0;
+uint32_t carOffHolder = 0xFFFFFFFF;
 
 /* USER CODE END PV */
 
@@ -100,6 +104,7 @@ extern volatile bool haz_light_state;
 
 /* External variables --------------------------------------------------------*/
 extern CAN_HandleTypeDef hcan1;
+extern TIM_HandleTypeDef htim3;
 extern TIM_HandleTypeDef htim4;
 /* USER CODE BEGIN EV */
 
@@ -320,6 +325,53 @@ void CAN1_RX0_IRQHandler(void)
 }
 
 /**
+  * @brief This function handles TIM3 global interrupt.
+  */
+void TIM3_IRQHandler(void)
+{
+  /* USER CODE BEGIN TIM3_IRQn 0 */
+
+  /* USER CODE END TIM3_IRQn 0 */
+  HAL_TIM_IRQHandler(&htim3);
+  /* USER CODE BEGIN TIM3_IRQn 1 */
+	
+	
+	
+	//Shifts in a 1 if bit is high, shift 0 otherwise
+	bmsFaultHolder = bmsFaultHolder << 1;
+	bmsFaultHolder |= (GPIOE->IDR >> 10) & 0x1; //PE10
+	
+	carOffHolder = carOffHolder << 1;
+	carOffHolder |= (GPIOA->IDR) & 0x1; //PA0
+	
+	
+	//Checks if PE10 (BMS ok) has been high for a 320 ms.
+	//Inside if statement is the code for triggering the fault.
+	if(bmsFaultHolder == 0xFFFFFFFF){
+		
+		HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_10);
+
+		//cut off positive contactor PC11 and PC9
+		GPIOC->BSRR = 0x0A000000;
+		//cut precharge board off (if its on) PC10
+		GPIOC->BSRR = 0x04000000;
+	
+		fault_flag=1;
+		state=4;	
+			
+	}	
+	
+	if(carOffHolder == 0){
+		//set 24V-12V DC DC low: PD9
+		GPIOD->BSRR=0x02000000;				
+		//set 110V-12V DC DC low: PE6
+		GPIOE->BSRR = 0x00400000;
+		//car is now off
+	}
+  /* USER CODE END TIM3_IRQn 1 */
+}
+
+/**
   * @brief This function handles TIM4 global interrupt.
   */
 void TIM4_IRQHandler(void)
@@ -366,6 +418,9 @@ void TIM4_IRQHandler(void)
 }
 
 /* USER CODE BEGIN 1 */
-
+//function uses clock cycles to create a delay
+void msDelay2(uint32_t msTime){
+	for(uint32_t i=0; i<msTime*4000;i++);
+}
 /* USER CODE END 1 */
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

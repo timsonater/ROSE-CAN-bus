@@ -64,6 +64,7 @@
 /* Private variables ---------------------------------------------------------*/
 CAN_HandleTypeDef hcan1;
 
+TIM_HandleTypeDef htim3;
 TIM_HandleTypeDef htim4;
 
 /* USER CODE BEGIN PV */
@@ -83,10 +84,15 @@ CAN_FilterTypeDef sFilterConfig3; //error messages
 
 //define a state variable
 volatile int state=0;
+volatile bool fault_flag = 0;
 int precharge_timeout=50;  //5 second delay
 bool precharge_status=0;
 
 //---FLAG DEFINIIONS---///
+//startup flags
+bool battery_ok_input;
+bool precharge_ok_input;
+
 //these control whether has indicated something should turn on or off
 volatile bool lts_on_flag;
 volatile bool lts_off_flag;
@@ -112,6 +118,7 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_CAN1_Init(void);
 static void MX_TIM4_Init(void);
+static void MX_TIM3_Init(void);
 /* USER CODE BEGIN PFP */
 static void User_GPIO_Init(void);
 int Debounced_ReadPin(GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin);
@@ -134,6 +141,7 @@ int main(void)
   /* USER CODE BEGIN 1 */
 
   /* USER CODE END 1 */
+  
 
   /* MCU Configuration--------------------------------------------------------*/
 
@@ -148,15 +156,17 @@ int main(void)
   SystemClock_Config();
 
   /* USER CODE BEGIN SysInit */
-
+	msDelay(500);
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_CAN1_Init();
   MX_TIM4_Init();
+  MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
 	User_GPIO_Init();
+	
 	
 	//-----CAN SETUP-----//
   Message_Header.DLC=1; //give message size of 1 byte
@@ -202,164 +212,189 @@ int main(void)
 
 	//start blinker control timers
 	HAL_TIM_Base_Start_IT(&htim4);
+	//start battery fault timer
+	HAL_TIM_Base_Start_IT(&htim3);
 	
   /* USER CODE END 2 */
+ 
+ 
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
 		switch(state){
-			
-			
-			//----PRECHARGE STATE----//	
-			//Commented out since PRB/BMS does precharge
-			/*
-			case 0:
 
-				//turn on Precharge Relay (PC4)
-				GPIOC->BSRR=0x00000010;
-			 
-			  //give precharge ~5 seconds to work before error
-				while(precharge_status!=1){
-					//check PE0 (op amp output) to see if precharge is complete
-					precharge_status=Debounced_ReadPin(GPIOE, GPIO_PIN_0);
-					//if precharge takes to long, kill the car.
-					precharge_timeout--;
-					if(precharge_timeout==0){
-						//send error message to kill the car
-						CAN_Send(0xE0, 0x0EE);
-						break;
-						}
+			//----PRECHARGE STATE----//	
+			case 0:	
+				if(fault_flag){
+					break;
+				}
+			
+				//step 1: check BMS signal to ensure battery is safe (PE10)
+				//(should be grounded, may not be usable)
+				battery_ok_input = ((GPIOE->IDR >> 10) & 0x0001);  
+				if(battery_ok_input){
+					state=4;
+					break;				
+				}
+				
+				//activate precharge PC10
+				GPIOC->BSRR = 0x00000400;
+				
+				if(fault_flag){
+					break;
+				}
+				msDelay(1500);
+
+				//make sure precharge is ok PC0
+				precharge_ok_input = (GPIOC->IDR &0x0001);
+				if(!precharge_ok_input){
+					state=4;
+					break;
+				}
+				
+				//close the positive contactor PC11 and PC9
+				GPIOC->BSRR = 0x00000A00;
+				
+				if(fault_flag){
+					break;
+				}
+				msDelay(500);
+				//cut precharge board off PC10
+				GPIOC->BSRR = 0x04000000;
+				//set PRB to Main pack by setting PE6 high
+				GPIOE->BSRR = 0x00000040;
+				msDelay(1000);
+				//cut auxillary power by seting PD9 low
+				GPIOD->BSRR = 0x02000000;
+				
+				//EMERGENCY POWER SWITCH TEST
+				//hold 24V-12V DC DC high: PD9
+				//GPIOD->BSRR=0x00000200;
+				//msDelay(200);
+				//cut off positive contactor PC11 and PC9
+				//GPIOC->BSRR = 0x0A000000;
+				//set PRB to Auxillary power by setting PE6 low
+				//GPIOE->BSRR = 0x00400000;
+				
+				
+				//main power is now on enter normal operation states
+				state=1;
+				GPIOD->ODR |= 0x1000;
+				break;
+				
+			//----NORMAL OPERATION STATES----//		
+			//check right turn signals (PC9)
+			case 1:
+				if(rts_on_flag==1){
+					
+					//ensure other turn signal is off
+					GPIOC->BSRR=0x03000000;
+					lts_state=0;
+					lts_light_state=0;
+					
+					//set state to 1
+					rts_state=1;
+					//timer will interrupt immediately so set this to turn on turn signal
+					rts_light_state=0;				
+					//reload prescaler by forcing update event
+					TIM4->EGR |=TIM_EGR_UG;	
+				
+					rts_on_flag=0;
+					
+					}
+				if(rts_off_flag==1 && lts_state==0){
+					
+					//set state to 0
+					rts_state=0;
+					//ensure lights are off
+					GPIOC->BSRR=0x02000000;
+					rts_off_flag=0;
+					}
+				state++;
+				break;
+					
+			//check left turn signals	(PC8)
+			case 2:
+				if(lts_on_flag==1){
+			
+					//ensure other turn signal is off
+					GPIOC->BSRR=0x03000000;
+					rts_state=0;
+					rts_light_state=0;
+					
+					//set state to 1
+					lts_state=1;
+					//timer will interrupt immediately so set this to turn on turn signal
+					lts_light_state=0;
+					//reset the turn signal timer
+					TIM4->EGR |=TIM_EGR_UG;	//reload prescaler by forcing update event
+					
+					lts_on_flag=0;
 					}
 				
-				//if precharge was successful, turn on pos and neg contactors, and turn off the relay  
-				if(precharge_status==1){
-					//turn on PC12 (precharge relay 1)(positive contactor)
-					GPIOC->BSRR=0x00001000;
-					//turn on PC13 (precharge relay 2)(negative contactor)
-					GPIOC->BSRR=0x00002000;
-					//turn off precharge relay (PC4)
-					GPIOC->BSRR=0x00100000;
+				if(lts_off_flag==1 && rts_state==0){
 					
-
-					//send message: Precharge Ok to STM1
-					CAN_Send(0xFD, 0x242);
-					//delete
-					GPIOD->ODR=0xF000;
+					//ensure other turn signal is off
+					GPIOC->BSRR=0x03000000;
+							
+					//set state to 0
+					lts_state=0;
+					//ensure lights are off
+					GPIOC->BSRR=0x01000000;
+					lts_off_flag=0;
+					}
+				state++;
+				break;
 					
-					state++;
-				*/
-				
-		//----NORMAL OPERATION STATES----//		
-    //check right turn signals (PC9)
-		case 1:
-			if(rts_on_flag==1){
-				
-				//ensure other turn signal is off
-				GPIOC->BSRR=0x03000000;
-				lts_state=0;
-				lts_light_state=0;
-				
-				//set state to 1
-				rts_state=1;
-				//timer will interrupt immediately so set this to turn on turn signal
-				rts_light_state=0;				
-				//reload prescaler by forcing update event
-				TIM4->EGR |=TIM_EGR_UG;	
-			
-				rts_on_flag=0;
-				
-			  }
-			if(rts_off_flag==1 && lts_state==0){
-				
-				//set state to 0
-				rts_state=0;
-				//ensure lights are off
-				GPIOC->BSRR=0x02000000;
-				rts_off_flag=0;
-			  }
-			state++;
-			break;
-				
-		//check left turn signals	(PC8)
-		case 2:
-			if(lts_on_flag==1){
-		
-				//ensure other turn signal is off
-				GPIOC->BSRR=0x03000000;
-				rts_state=0;
-				rts_light_state=0;
-				
-				//set state to 1
-				lts_state=1;
-				//timer will interrupt immediately so set this to turn on turn signal
-				lts_light_state=0;
-				//reset the turn signal timer
-				TIM4->EGR |=TIM_EGR_UG;	//reload prescaler by forcing update event
-				
-				lts_on_flag=0;
-			  }
-			
-			if(lts_off_flag==1 && rts_state==0){
-				
-				//ensure other turn signal is off
-				GPIOC->BSRR=0x03000000;
-				    
-				//set state to 0
-				lts_state=0;
-				//ensure lights are off
-				GPIOC->BSRR=0x01000000;
-				lts_off_flag=0;
-			  }
-			state++;
-			break;
-				
-		//check the hazards
-		case 3:
-			if(haz_on_flag==1){
-				
-				//set state to 1
-				haz_state=1;
-				//timer will interrupt immediately so set these to turn on turn signals
-				haz_light_state=0;
-				//reset the turn signal timer
-				TIM4->EGR |=TIM_EGR_UG;
-				
-				haz_on_flag=0;
-			  }
-			if(haz_off_flag==1){
+			//check the hazards
+			case 3:
+				if(haz_on_flag==1){
+					
+					//set state to 1
+					haz_state=1;
+					//timer will interrupt immediately so set these to turn on turn signals
+					haz_light_state=0;
+					//reset the turn signal timer
+					TIM4->EGR |=TIM_EGR_UG;
+					
+					haz_on_flag=0;
+					}
+				if(haz_off_flag==1){
 
-				//set states to 0
-				haz_state=0;	
-				//ensure lights are off
-				GPIOC->BSRR=0x03000000;
-			  //stop turn signals
-				haz_off_flag=0;
-			  }
-			state=1;
-			break;
+					//set states to 0
+					haz_state=0;	
+					//ensure lights are off
+					GPIOC->BSRR=0x03000000;
+					//stop turn signals
+					haz_off_flag=0;
+					}
+				state=1;
+				break;
+					
 				
-				
-		 //-----FAULT STATES-----//
-		
-	  //turn off contactors
-		case 4:
-			//turn off PC12 (precharge relay 1)(positive contactor)
-			GPIOC->BSRR=0x10000000;
-			//turn off PC13 (precharge relay 2)(negative contactor)
-			GPIOC->BSRR=0x20000000;
-			//return to normal states to retain some operation of the car
-		  state=1;
-			break;
-		  }
-		}
+					
+					
+			 //-----FAULT STATES-----//
+			
+			//turn off contactors
+			case 4:
+				//cut off positive contactor PC11 and PC9
+				GPIOC->BSRR = 0x0A000000;
+				//cut precharge board off (if its on) PC10
+				GPIOC->BSRR = 0x04000000;
+				//return to normal states to retain some operation of the car
+				state=1;
+				break;
+				}
+			}
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-  }
+			
   /* USER CODE END 3 */
-
+}
 
 /**
   * @brief System Clock Configuration
@@ -370,11 +405,11 @@ void SystemClock_Config(void)
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
 
-  /**Configure the main internal regulator output voltage 
+  /** Configure the main internal regulator output voltage 
   */
   __HAL_RCC_PWR_CLK_ENABLE();
   __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
-  /**Initializes the CPU, AHB and APB busses clocks 
+  /** Initializes the CPU, AHB and APB busses clocks 
   */
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
@@ -389,7 +424,7 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
-  /**Initializes the CPU, AHB and APB busses clocks 
+  /** Initializes the CPU, AHB and APB busses clocks 
   */
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
                               |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
@@ -442,6 +477,51 @@ static void MX_CAN1_Init(void)
 }
 
 /**
+  * @brief TIM3 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM3_Init(void)
+{
+
+  /* USER CODE BEGIN TIM3_Init 0 */
+
+  /* USER CODE END TIM3_Init 0 */
+
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+
+  /* USER CODE BEGIN TIM3_Init 1 */
+
+  /* USER CODE END TIM3_Init 1 */
+  htim3.Instance = TIM3;
+  htim3.Init.Prescaler = 100;
+  htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim3.Init.Period = 550;
+  htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim3) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim3, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim3, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM3_Init 2 */
+
+  /* USER CODE END TIM3_Init 2 */
+
+}
+
+/**
   * @brief TIM4 Initialization Function
   * @param None
   * @retval None
@@ -464,6 +544,7 @@ static void MX_TIM4_Init(void)
   htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim4.Init.Period = 550;
   htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim4.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim4) != HAL_OK)
   {
     Error_Handler();
@@ -505,13 +586,23 @@ static void User_GPIO_Init(void){
 	//enable clocks
 	__HAL_RCC_GPIOD_CLK_ENABLE();
 	__HAL_RCC_GPIOC_CLK_ENABLE();
+	__HAL_RCC_GPIOE_CLK_ENABLE();
+	__HAL_RCC_GPIOA_CLK_ENABLE();
 	
-	//enable PD12-PD15 debugging lights
-  GPIOD->MODER=0x55FFFFFF;
-	//enable PC8-PC11, PC4 as outputs
-	GPIOC->MODER=0xFF55F7FF;
-	//enable PE0 as input
-	GPIOE->MODER=0xFFFFFFFC;	
+	//enable PD12-PD15 debugging lights as outputs and PD9 as output
+  GPIOD->MODER=0x55F7FFFF;
+	//enable PC8-PC11, PC4 as outputs, PC0 as input
+	GPIOC->MODER=0xFF55F7FC;
+	//enable PE0, PE10 as input, PE6, PE14 as output
+	GPIOE->MODER=0xDFCFDFFC;	
+	//enable PA0 as input
+	GPIOA->MODER=0xA8000000; //reset state
+	
+	
+	//enable pullup on PE10, switching from pulldown to force rising edge interrupt
+	GPIOE->PUPDR=0x55555555;
+	//enable pullup on PA0
+	GPIOA->PUPDR=0x64000001;
   }
 //TODO: if this reads two different things it returns 0, that could be bad
 //simple debounced read (using HAL)
