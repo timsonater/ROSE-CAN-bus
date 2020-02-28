@@ -1,13 +1,10 @@
---cpu=Cortex-M4.fp
+--cpu=Cortex-M4.fp.sp
 "stm2-rear\startup_stm32f407xx.o"
 "stm2-rear\main.o"
 "stm2-rear\stm32f4xx_it.o"
 "stm2-rear\stm32f4xx_hal_msp.o"
+"stm2-rear\system_stm32f4xx.o"
 "stm2-rear\stm32f4xx_hal_can.o"
-"stm2-rear\stm32f4xx_hal_dac.o"
-"stm2-rear\stm32f4xx_hal_dac_ex.o"
-"stm2-rear\stm32f4xx_hal_tim.o"
-"stm2-rear\stm32f4xx_hal_tim_ex.o"
 "stm2-rear\stm32f4xx_hal_rcc.o"
 "stm2-rear\stm32f4xx_hal_rcc_ex.o"
 "stm2-rear\stm32f4xx_hal_flash.o"
@@ -20,7 +17,11 @@
 "stm2-rear\stm32f4xx_hal_pwr_ex.o"
 "stm2-rear\stm32f4xx_hal_cortex.o"
 "stm2-rear\stm32f4xx_hal.o"
-"stm2-rear\system_stm32f4xx.o"
+"stm2-rear\stm32f4xx_hal_exti.o"
+"stm2-rear\stm32f4xx_hal_dac.o"
+"stm2-rear\stm32f4xx_hal_dac_ex.o"
+"stm2-rear\stm32f4xx_hal_tim.o"
+"stm2-rear\stm32f4xx_hal_tim_ex.o"
 --library_type=microlib --strict --scatter "STM2-Rear\STM2-Rear.sct"
 --summary_stderr --info summarysizes --map --load_addr_map_info --xref --callgraph --symbols
 --info sizes --info totals --info unused --info veneers

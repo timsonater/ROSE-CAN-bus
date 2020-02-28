@@ -59,6 +59,9 @@
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN PV */
 
+//---Throttle Watchdog---//
+bool throttleFault;
+
 //-----CAN VARIABLES-----//
 extern uint32_t TxMailbox;
 extern uint8_t message_in;
@@ -266,8 +269,11 @@ void SysTick_Handler(void)
 void CAN1_RX0_IRQHandler(void)
 {
   /* USER CODE BEGIN CAN1_RX0_IRQn 0 */
-	
-	
+	count++;
+	if(count==100){
+		//GPIOD->ODR = ~(GPIOD->ODR);
+		count=0;
+	}
 	
   /* USER CODE END CAN1_RX0_IRQn 0 */
   HAL_CAN_IRQHandler(&hcan1);
@@ -330,20 +336,18 @@ void CAN1_RX0_IRQHandler(void)
 					//CC_dec_set=1;
 					break;
 						
-				//break lights on 
+				//break lights on
 				case 0x12:
-					//turn on break lights (PB8)
-				  GPIOB->BSRR=0x00000100;
-					GPIOD->ODR |= (0x0020);
+					//turn on break lights (PC10)
+				  //GPIOC->BSRR=0x00000400;
 					//turn off CC
 				  //CC_on_off=0;
 					break;
 				
 				//break lights off (and CC disable)
 				case 0x13:
-					//turn off break lights (PB8)
-					GPIOB->BSRR=0x01000000;
-					GPIOD->ODR &= ~(0x0020);
+					//turn off break lights (PC10)
+					//GPIOC->BSRR=0x04000000;
 					break;
 				
 				//TODO: I have no idea if low or high for forward/reverse and power/eco
@@ -382,7 +386,6 @@ void CAN1_RX0_IRQHandler(void)
 		//NOTE: this interrupt effectively acts as the timer for the DAC on the rear stm 
 		case 0x210:
 			
-			//GPIOD->ODR ^= 0x0020;
 			HAL_DAC_SetValue(&hdac, DAC1_CHANNEL_1, DAC_ALIGN_8B_R, message_in);
 			
 			//if the message voltage is greater than the cruise voltage just use that no matter what
@@ -403,6 +406,7 @@ void CAN1_RX0_IRQHandler(void)
 		
 			//pet the watchdog timer (timer 3)
 			//TIM3->CNT=0;
+			throttleFault = 0;
 		  break;
 		
 		//Filter4: Regen Position
@@ -418,11 +422,13 @@ void CAN1_RX0_IRQHandler(void)
 			HAL_DAC_Stop(&hdac, DAC1_CHANNEL_2);
 			//trip fault flag
 			fault_flag=1;
+
 			break;
 	}    
 
   /* USER CODE END CAN1_RX0_IRQn 1 */
 }
+
 /**
   * @brief This function handles TIM3 global interrupt.
   */
@@ -433,7 +439,13 @@ void TIM3_IRQHandler(void)
   /* USER CODE END TIM3_IRQn 0 */
   HAL_TIM_IRQHandler(&htim3);
   /* USER CODE BEGIN TIM3_IRQn 1 */
-
+	//Checking throttle position roughly every third of a second
+	if(throttleFault == 1) 
+		{
+		HAL_DAC_Stop(&hdac, DAC1_CHANNEL_1);
+		HAL_DAC_Stop(&hdac, DAC1_CHANNEL_2);
+		}
+	throttleFault = 1;
   /* USER CODE END TIM3_IRQn 1 */
 }
 
