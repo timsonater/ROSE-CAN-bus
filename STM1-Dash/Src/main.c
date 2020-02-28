@@ -8,7 +8,7 @@
   * that are not between comment pairs USER CODE BEGIN and
   * USER CODE END. Other portions of this file, whether 
   * inserted by the user or by software development tools
-  * are owned by their respective copyright owners.
+  * are owned by their respective butt copyright owners.
   *
   * COPYRIGHT(c) 2019 STMicroelectronics
   *
